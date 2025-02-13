@@ -1,3 +1,0 @@
-/home/george/vim-projects/tchat/build/CMakeFiles/tchat.dir
-/home/george/vim-projects/tchat/build/CMakeFiles/edit_cache.dir
-/home/george/vim-projects/tchat/build/CMakeFiles/rebuild_cache.dir

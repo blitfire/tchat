@@ -1,52 +1,37 @@
-#include <functional>
+#include <array>
 #include <iostream>
 #include <asio.hpp>
-#include <thread>
 
-class Printer {
-    asio::strand<asio::io_context::executor_type> strand_;
-    asio::steady_timer timer1_;
-    asio::steady_timer timer2_;
-    int count_;
-public:
-    explicit Printer(asio::io_context& io) :
-        strand_(asio::make_strand(io)),
-        timer1_(io, asio::chrono::seconds(1)),
-        timer2_(io, asio::chrono::seconds(1)),
-        count_(0) { 
-        timer1_.async_wait(std::bind(&Printer::print1, this));
-        timer2_.async_wait(std::bind(&Printer::print2, this));
-    }
-    ~Printer() {
-        std::cout << "Final count is: " << count_ << std::endl;
-    }
-    void print1() {
-        if (count_ < 10) {
-            std::cout << "Timer 1: " << count_ << std::endl;
-            ++count_;
+using asio::ip::tcp;
 
-            timer1_.expires_at(timer1_.expiry() + asio::chrono::seconds(1));
-            timer1_.async_wait(std::bind(&Printer::print1, this));
+int main(int argc, char* argv[]) {
+    try {
+        if (argc != 2) {
+            std::cerr << "Usage: client <host>" << std::endl;
+            return -1;
         }
-    }
-    void print2() {
-        if (count_ < 10) {
-            std::cout << "Timer 2: " << count_ << std::endl;
-            ++count_;
+        asio::io_context io_context;
+        tcp::resolver resolver(io_context);
+        tcp::resolver::results_type endpoints = resolver.resolve(argv[1], "daytime");
 
-            timer2_.expires_at(timer2_.expiry() + asio::chrono::seconds(1));
-            timer2_.async_wait(std::bind(&Printer::print2, this));
+        tcp::socket socket(io_context);
+        asio::connect(socket, endpoints);
+
+        for (;;) {
+            std::array<char, 128> buf;
+            std::error_code error;
+
+            size_t len = socket.read_some(asio::buffer(buf), error);
+            if (error == asio::error::eof)
+                return 0;
+            else if (error) 
+                throw std::system_error(error);
+
+            std::cout.write(buf.data(), len);
         }
+    } catch (std::exception& e) {
+        std::cerr << e.what() << std::endl;
     }
-
-};
-
-int main() {
-    asio::io_context io;
-    Printer p(io);
-    std::thread t ([&]{ io.run(); });
-    io.run();
-    t.join();
 
     return 0;
 }
