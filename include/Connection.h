@@ -15,7 +15,7 @@ class Connection : public std::enable_shared_from_this<Connection> {
     asio::io_context& context_;
     asio::strand<asio::io_context::executor_type> buffer_strand_;
     std::stringstream front_buffer_;
-    std::string back_buffer;
+    std::string _back_buffer;
     
     tcp::socket socket_;
     std::thread thread_;
@@ -41,7 +41,12 @@ public:
     void start();
 
     void write(std::string_view message) const;
-    std::string read() const;
+    std::string read() const {
+        std::string out {std::move(front_buffer_.str())};
+        front_buffer_.str("");
+        front_buffer_.clear();
+        return out;
+    }
 
 }
 
