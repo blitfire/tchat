@@ -24,3 +24,10 @@ void Connection::start() {
     init_read();
     thread_ = std::thread([&]{ context_.run(); });
 }
+
+void Connection::read() {
+        std::string out {std::move(front_buffer_.str())};
+        front_buffer_.str("");
+        front_buffer_.clear();
+        return out;
+}

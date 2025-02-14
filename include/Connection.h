@@ -41,12 +41,7 @@ public:
     void start();
 
     void write(std::string_view message) const;
-    std::string read() const {
-        std::string out {std::move(front_buffer_.str())};
-        front_buffer_.str("");
-        front_buffer_.clear();
-        return out;
-    }
+    std::string read() const; 
 
 }
 
