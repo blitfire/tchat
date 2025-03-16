@@ -3,24 +3,6 @@
 
 using asio::ip::tcp;
 
-void wait(tcp::socket& socket);
-void send(tcp::socket& socket);
-
-void wait(tcp::socket& socket) {
-    auto buffer = std::make_shared<asio::streambuf>();
-
-    asio::async_read_until(socket, *buffer, '\n',
-        [&socket, buffer](const std::error_code& ec, std::size_t /*length*/) {
-            if (!ec) {
-                buffer->consume(buffer->size()); // Discards the data
-
-                send(socket);
-            } else {
-                std::cerr << "Error while reading: " << ec.message() << std::endl;
-            }
-        });
-}
-
 void send(tcp::socket& socket) {
     std::string message;
     std::cout << "Enter message: ";
@@ -29,11 +11,11 @@ void send(tcp::socket& socket) {
     message += '\n';
     
     asio::async_write(socket, asio::buffer(message),
-            [&](std::error_code ec, size_t /*length*/) {
-                if (!ec) {
-                    wait(socket);
-                };
-            });
+        [&](std::error_code ec, size_t /*length*/) {
+            if (!ec) {
+                send(socket);
+            };
+        });
 }
 
 int main() {
@@ -45,7 +27,7 @@ int main() {
         tcp::socket socket(io_context);
         asio::connect(socket, endpoints);
 
-        wait(socket);
+        send(socket);
 
         io_context.run();
 

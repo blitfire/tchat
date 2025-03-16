@@ -10,28 +10,19 @@ class tcp_connection : public std::enable_shared_from_this<tcp_connection> {
     tcp::socket socket_;
     asio::streambuf buffer_;
 
-    explicit tcp_connection(tcp::socket socket) : 
-        socket_(std::move(socket)) {}
+    explicit tcp_connection(tcp::socket socket) : socket_(std::move(socket)) {}
 
     void read() {
         asio::async_read_until(socket_, buffer_, '\n',
             [self = shared_from_this()](std::error_code ec, std::size_t length) {
-                if (!ec) {
-                    std::istream is(&self->buffer_);
-                    std::string message;
-                    std::getline(is, message);
-                    std::cout << "Message received: " << message << std::endl;
-                    self->respond();
+                if (ec) {
+                   return; 
                 }
-            });
-    }
-
-    void respond() {
-        asio::async_write(socket_, asio::buffer("\n"),
-            [self = shared_from_this()](std::error_code ec, std::size_t /*length*/) {
-                if (!ec) {
-                    self->read();  // Continue reading
-                }
+                std::istream is(&self->buffer_);
+                std::string message;
+                std::getline(is, message);
+                std::cout << "Message received: " << message << std::endl;
+                self->read();
             });
     }
 
@@ -45,7 +36,7 @@ public:
     tcp::socket& socket() { return socket_; }
 
     void start() {
-        respond();
+        read();
     }
 };
 
@@ -55,7 +46,6 @@ class tcp_server {
     void start_accept() {
         acceptor_.async_accept([this](std::error_code ec, tcp::socket socket) {
             if (!ec) {
-                std::cout << "Connection made successfully" << std::endl;
                 tcp_connection::pointer connection(tcp_connection::create(std::move(socket)));
                 connection->start();
             }
