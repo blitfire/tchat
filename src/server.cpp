@@ -2,43 +2,9 @@
 #include <string>
 #include <iostream>
 #include <asio.hpp>
+#include "Connection.h"
 
 using asio::ip::tcp;
-typedef asio::strand<asio::io_context::executor_type> out_strand;
-
-class tcp_connection : public std::enable_shared_from_this<tcp_connection> {
-    tcp::socket socket_;
-    asio::streambuf buffer_;
-
-    explicit tcp_connection(tcp::socket socket) : socket_(std::move(socket)) {}
-
-    void read() {
-        asio::async_read_until(socket_, buffer_, '\n',
-            [self = shared_from_this()](std::error_code ec, std::size_t length) {
-                if (ec) {
-                   return; 
-                }
-                std::istream is(&self->buffer_);
-                std::string message;
-                std::getline(is, message);
-                std::cout << "Message received: " << message << std::endl;
-                self->read();
-            });
-    }
-
-public:
-    typedef std::shared_ptr<tcp_connection> pointer;
-
-    static pointer create(tcp::socket socket) {
-        return pointer(new tcp_connection(std::move(socket)));
-    }
-
-    tcp::socket& socket() { return socket_; }
-
-    void start() {
-        read();
-    }
-};
 
 class tcp_server {
     tcp::acceptor acceptor_;
@@ -46,7 +12,7 @@ class tcp_server {
     void start_accept() {
         acceptor_.async_accept([this](std::error_code ec, tcp::socket socket) {
             if (!ec) {
-                tcp_connection::pointer connection(tcp_connection::create(std::move(socket)));
+                Connection::pointer connection(Connection::create(std::move(socket)));
                 connection->start();
             }
             start_accept();

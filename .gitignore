@@ -34,3 +34,9 @@
 # Build Directory
 build/
 asio-tutorial-examples/
+.cache/
+CMakeFiles/
+CMakeCache.txt
+Makefile
+cmake_install.cmake
+compile_commands.json
