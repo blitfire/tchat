@@ -3,16 +3,19 @@
 
 #include <memory>
 #include <asio.hpp>
+#include <sstream>
 
 using asio::ip::tcp;
 
 class Connection : public std::enable_shared_from_this<Connection> {
     tcp::socket socket_;
     asio::streambuf buffer_;
+    std::stringstream inStream_;
 
     explicit Connection(tcp::socket socket) : socket_(std::move(socket)) {}
 
     void read();
+    void write();
 
 public:
     typedef std::shared_ptr<Connection> pointer;
@@ -23,9 +26,7 @@ public:
 
     tcp::socket& socket() { return socket_; }
 
-    void start() {
-        read();
-    }
+    void start() { read(); }
 };
 
 #endif // INCLUDE_CONNECTION
